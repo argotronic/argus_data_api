@@ -8,10 +8,10 @@ namespace data_api {
 
     //    static constexpr wchar_t const* kMappingName{L"Global\\ARGUSMONITOR_DATA_INTERFACE"};
     //    static constexpr wchar_t const* kMutexName{L"Global\\ARGUSMONITOR_DATA_INTERFACE_MUTEX"};
-    //    static constexpr std::size_t    kMappingSize{100 * 1024U};
+    //    static constexpr std::size_t    kMappingSize{1024U * 1024U};
     inline wchar_t const* kMappingName() { return L"Global\\ARGUSMONITOR_DATA_INTERFACE"; }
     inline wchar_t const* kMutexName() { return L"Global\\ARGUSMONITOR_DATA_INTERFACE_MUTEX"; }
-    inline std::size_t    kMappingSize() { return 100 * 1024U; }
+    inline std::size_t    kMappingSize() { return 1024U * 1024U; }
 
     enum ARGUS_MONITOR_SENSOR_TYPE {
         SENSOR_TYPE_INVALID = 0,
@@ -50,9 +50,9 @@ namespace data_api {
 
 
 #pragma pack(1)
-    const std::uint32_t kMaxSensorCount = 256U;
-    const std::uint32_t kMaxLenUnit     = 8U;
-    const std::uint32_t kMaxLenLabel    = 32U;
+    const std::uint32_t kMaxSensorCount = 512U;
+    const std::uint32_t kMaxLenUnit     = 32U;
+    const std::uint32_t kMaxLenLabel    = 64U;
 
     struct ArgusMonitorSensorData {
         ARGUS_MONITOR_SENSOR_TYPE SensorType;                 // sensor type, see: enum ARGUS_MONITOR_SENSOR_TYPE
