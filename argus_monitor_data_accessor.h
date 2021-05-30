@@ -13,13 +13,13 @@ namespace data_api {
     class ArgusMonitorDataAccessor {
 
     private:
-        HANDLE                                          handle_file_mapping{ nullptr };
-        void*                                           pointer_to_mapped_data{ nullptr };
-        argus_monitor::data_api::ArgusMontorData const* sensor_data_{ nullptr };
-        bool                                            is_open_{ false };
-        bool                                            keep_polling_{ true };
-        std::function<void(void)>                       new_sensor_data_callback_{};
-        std::thread                                     polling_thread{};
+        HANDLE                                                               handle_file_mapping{ nullptr };
+        void*                                                                pointer_to_mapped_data{ nullptr };
+        argus_monitor::data_api::ArgusMontorData const*                      sensor_data_{ nullptr };
+        bool                                                                 is_open_{ false };
+        bool                                                                 keep_polling_{ true };
+        std::function<void(argus_monitor::data_api::ArgusMontorData const&)> new_sensor_data_callback_{};
+        std::thread                                                          polling_thread{};
 
 
         void          StartThread();
@@ -28,7 +28,7 @@ namespace data_api {
         void          ProcessSensorData(argus_monitor::data_api::ArgusMontorData const& sensor_data);
 
     public:
-        ArgusMonitorDataAccessor()                                = default;
+        ArgusMonitorDataAccessor() = default;
 
         ArgusMonitorDataAccessor(ArgusMonitorDataAccessor const&) = delete;
         ArgusMonitorDataAccessor(ArgusMonitorDataAccessor&&)      = delete;
@@ -44,7 +44,8 @@ namespace data_api {
         }
 
         // todo: just for running test suite -- remove before release
-        void TestFunction_FakeCycleCounterIncrement() {
+        void TestFunction_FakeCycleCounterIncrement()
+        {
             ++reinterpret_cast<argus_monitor::data_api::ArgusMontorData*>(pointer_to_mapped_data)->CycleCounter;
         }
 
@@ -52,7 +53,7 @@ namespace data_api {
         bool IsOpen() const noexcept { return is_open_; }
         void Close();
 
-        bool RegisterSensorCallbackOnDataChanged(std::function<void(void)> callback);
+        bool RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback);
     };
 
 
