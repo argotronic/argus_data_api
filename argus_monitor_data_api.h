@@ -22,28 +22,25 @@ namespace data_api {
         SENSOR_TYPE_NETWORK_SPEED,                 // up/down speeds of network adapters if selected to be monitored inside Argus Monitor
         SENSOR_TYPE_CPU_TEMPERATURE,               // the normal CPU temperature readings, per core for Intel and the only one available for AMD
         SENSOR_TYPE_CPU_TEMPERATURE_ADDITIONAL,    // additional temperatures provided by the CPU, like CCDx temperatures of AMD CPUs
-        SENSOR_TYPE_CPU_MULTIPLIER_MIN,
-        SENSOR_TYPE_CPU_MULTIPLIER_MAX,
-        SENSOR_TYPE_CPU_FREQUENCY_MIN,
-        SENSOR_TYPE_CPU_FREQUENCY_MAX,
+        SENSOR_TYPE_CPU_MULTIPLIER,       // multiplier value for every core (inside the CPU, those values are changed MUCH faster than the sampling
+                                          // frequency)
+        SENSOR_TYPE_CPU_FREQUENCY_FSB,    // core frequencies can be calculated by multiplying FSB frequency by the multipliers
         SENSOR_TYPE_GPU_TEMPERATURE,
+        SENSOR_TYPE_GPU_NAME,  // the name of the GPU (e.g. "Nvidia RTX3080")
         SENSOR_TYPE_GPU_LOAD,
         SENSOR_TYPE_GPU_CORECLK,
         SENSOR_TYPE_GPU_MEMORYCLK,
+        SENSOR_TYPE_GPU_SHARERCLK,
         SENSOR_TYPE_GPU_FAN_SPEED_PERCENT,
         SENSOR_TYPE_GPU_FAN_SPEED_RPM,
-        SENSOR_TYPE_GPU_MEMORY_USED_PERC,
+        SENSOR_TYPE_GPU_MEMORY_USED_PERCENT,
         SENSOR_TYPE_GPU_MEMORY_USED_MB,
         SENSOR_TYPE_GPU_POWER,
         SENSOR_TYPE_DISK_TEMPERATURE,
         SENSOR_TYPE_DISK_TRANSFER_RATE,
-        SENSOR_TYPE_CPU_LOAD_ALL,
-        SENSOR_TYPE_CPU_LOAD_PROGRAMS,
-        SENSOR_TYPE_CPU_LOAD_SYSTEM,
-        SENSOR_TYPE_RAM_USAGE_PERCENT,
-        SENSOR_TYPE_RAM_USAGE_MB,
-        SENSOR_TYPE_BATTERY_CHARGE_STATE,
-        SENSOR_TYPE_BATTERY_CHARGE_PERCENT,
+        SENSOR_TYPE_CPU_LOAD,
+        SENSOR_TYPE_RAM_USAGE,
+        SENSOR_TYPE_BATTERY,
         SENSOR_TYPE_MAX_SENSORS
         // TODO: define more sensor types
     };
