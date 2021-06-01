@@ -61,7 +61,7 @@ namespace data_api {
     };
 
     struct ArgusMontorData {
-        std::uint8_t  Signature[4];    // if Argus Monitor is active: { 'U', 'R', 'S', 'S' } --  otherwise: 4x '0x00'
+        std::uint8_t  Signature[4];    // if Argus Monitor is active: { 'A', 'r', 'g', 'M' } --  otherwise: 4x '0x00'
         std::uint8_t  ArgusMajor;      // e.g. 5
         std::uint8_t  ArgusMinorA;     // e.g. 3
         std::uint8_t  ArgusMinorB;     // e.g. 2
