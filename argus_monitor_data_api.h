@@ -40,9 +40,8 @@ namespace data_api {
         SENSOR_TYPE_DISK_TRANSFER_RATE,
         SENSOR_TYPE_CPU_LOAD,
         SENSOR_TYPE_RAM_USAGE,
-        SENSOR_TYPE_BATTERY,
+        // TODO: SENSOR_TYPE_BATTERY,
         SENSOR_TYPE_MAX_SENSORS
-        // TODO: define more sensor types
     };
 
 
@@ -61,7 +60,7 @@ namespace data_api {
     };
 
     struct ArgusMontorData {
-        std::uint8_t  Signature[4];    // if Argus Monitor is active: { 'A', 'r', 'g', 'M' } --  otherwise: 4x '0x00'
+        std::uint32_t Signature;       // if Argus Monitor is active :0x4D677241 -- otherwise: 0x00000000'
         std::uint8_t  ArgusMajor;      // e.g. 5
         std::uint8_t  ArgusMinorA;     // e.g. 3
         std::uint8_t  ArgusMinorB;     // e.g. 2

@@ -24,7 +24,7 @@ namespace data_api {
         if (is_open_) {
             return true;
         }
-        handle_file_mapping = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE,              // read/write access
+        handle_file_mapping = OpenFileMappingW(FILE_MAP_READ | FILE_MAP_WRITE,             // read/write access
                                               FALSE,                                       // do not inherit the name
                                               argus_monitor::data_api::kMappingName());    // name of mapping object
 
@@ -102,7 +102,6 @@ namespace data_api {
                 }
             }
 
-            // todo: process data (e.g. call Process of class)
             if (new_data_available) {
                 class_instance->ProcessSensorData(sensor_data_copy);
             }
@@ -112,7 +111,7 @@ namespace data_api {
 
     HANDLE ArgusMonitorDataAccessor::OpenArgusApiMutex()
     {
-        return OpenMutex(READ_CONTROL | MUTANT_QUERY_STATE | SYNCHRONIZE, FALSE, argus_monitor::data_api::kMutexName());
+        return OpenMutexW(READ_CONTROL | MUTANT_QUERY_STATE | SYNCHRONIZE, FALSE, argus_monitor::data_api::kMutexName());
     }
 
     void ArgusMonitorDataAccessor::ProcessSensorData(argus_monitor::data_api::ArgusMontorData const& sensor_data)
