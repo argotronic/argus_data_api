@@ -26,7 +26,7 @@ namespace data_api {
                                           // frequency)
         SENSOR_TYPE_CPU_FREQUENCY_FSB,    // core frequencies can be calculated by multiplying FSB frequency by the multipliers
         SENSOR_TYPE_GPU_TEMPERATURE,
-        SENSOR_TYPE_GPU_NAME,  // the name of the GPU (e.g. "Nvidia RTX3080")
+        SENSOR_TYPE_GPU_NAME,    // the name of the GPU (e.g. "Nvidia RTX3080")
         SENSOR_TYPE_GPU_LOAD,
         SENSOR_TYPE_GPU_CORECLK,
         SENSOR_TYPE_GPU_MEMORYCLK,
@@ -40,7 +40,7 @@ namespace data_api {
         SENSOR_TYPE_DISK_TRANSFER_RATE,
         SENSOR_TYPE_CPU_LOAD,
         SENSOR_TYPE_RAM_USAGE,
-        // TODO: SENSOR_TYPE_BATTERY,
+        SENSOR_TYPE_BATTERY,
         SENSOR_TYPE_MAX_SENSORS
     };
 
@@ -55,8 +55,8 @@ namespace data_api {
         wchar_t                   Label[kMaxLenLabel];        // "user defined name, if available, source name otherwise
         wchar_t                   UnitString[kMaxLenUnit];    // "°C, rpm, %, ..."
         double                    Value;                      // fan speed / fan control value / temperature / load / usage / etc.
-        std::uint32_t             Index;                      // for sensor types with multiple instances, Core ID on multi core systems
-        std::uint32_t             Extra;                      // usually 0, for Sensors with multiple instances (e.g. CPU, GPU) CPU/GPU index
+        std::uint32_t             DataIndex;      // for sensor which can provide multiple different readings, Core ID on multi core systems
+        std::uint32_t             SensorIndex;    // for Sensors with multiple instances (e.g. CPU, GPU) CPU/GPU index
     };
 
     struct ArgusMontorData {
