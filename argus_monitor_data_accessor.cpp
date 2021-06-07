@@ -44,7 +44,7 @@ namespace data_api {
         sensor_data_ = reinterpret_cast<argus_monitor::data_api::ArgusMontorData const*>(pointer_to_mapped_data);
         is_open_     = true;
 
-        StartThread();
+        StartPollingThread();
 
         return true;
     }
@@ -67,12 +67,12 @@ namespace data_api {
             handle_file_mapping = nullptr;
         }
     }
-    void ArgusMonitorDataAccessor::StartThread() { polling_thread = std::thread{ Poll, this }; }
 
-    bool ArgusMonitorDataAccessor::RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback)
+    void ArgusMonitorDataAccessor::StartPollingThread() { polling_thread = std::thread{ Poll, this }; }
+
+    void ArgusMonitorDataAccessor::RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback)
     {
         new_sensor_data_callback_ = callback;
-        return true;
     }
 
     void ArgusMonitorDataAccessor::Poll(ArgusMonitorDataAccessor* class_instance)

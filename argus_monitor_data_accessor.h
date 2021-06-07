@@ -22,7 +22,7 @@ namespace data_api {
         std::thread                                                          polling_thread{};
 
 
-        void          StartThread();
+        void          StartPollingThread();
         static void   Poll(ArgusMonitorDataAccessor* class_instance);
         static HANDLE OpenArgusApiMutex();
         void          ProcessSensorData(argus_monitor::data_api::ArgusMontorData const& sensor_data);
@@ -43,17 +43,11 @@ namespace data_api {
             }
         }
 
-        // todo: just for running test suite -- remove before release
-        void TestFunction_FakeCycleCounterIncrement()
-        {
-            ++reinterpret_cast<argus_monitor::data_api::ArgusMontorData*>(pointer_to_mapped_data)->CycleCounter;
-        }
-
         bool Open();
         bool IsOpen() const noexcept { return is_open_; }
         void Close();
 
-        bool RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback);
+        void RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback);
     };
 
 
