@@ -1,6 +1,7 @@
 ﻿#ifndef ARGUS_MONITOR_DATA_MEMORY_API_H
 #define ARGUS_MONITOR_DATA_MEMORY_API_H
 
+#include <cstddef>
 #include <cstdint>
 
 namespace argus_monitor {
