@@ -97,7 +97,7 @@ namespace data_api {
                 Lock scoped_lock(mutex_handle);
                 if (last_cycle_counter != sensor_data->CycleCounter) {
                     last_cycle_counter = sensor_data->CycleCounter;
-                    memcpy(&sensor_data_copy, &sensor_data, sizeof(argus_monitor::data_api::ArgusMontorData));
+                    memcpy(&sensor_data_copy, sensor_data, sizeof(argus_monitor::data_api::ArgusMontorData));
                     new_data_available = true;
                 }
             }
