@@ -15,17 +15,17 @@ namespace data_api {
     private:
         HANDLE                                                               handle_file_mapping{ nullptr };
         void*                                                                pointer_to_mapped_data{ nullptr };
-        argus_monitor::data_api::ArgusMontorData const*                      sensor_data_{ nullptr };
+        argus_monitor::data_api::ArgusMonitorData const*                      sensor_data_{ nullptr };
         bool                                                                 is_open_{ false };
         bool                                                                 keep_polling_{ true };
-        std::function<void(argus_monitor::data_api::ArgusMontorData const&)> new_sensor_data_callback_{};
+        std::function<void(argus_monitor::data_api::ArgusMonitorData const&)> new_sensor_data_callback_{};
         std::thread                                                          polling_thread{};
 
 
         void          StartPollingThread();
         static void   Poll(ArgusMonitorDataAccessor* class_instance);
         static HANDLE OpenArgusApiMutex();
-        void          ProcessSensorData(argus_monitor::data_api::ArgusMontorData const& sensor_data);
+        void          ProcessSensorData(argus_monitor::data_api::ArgusMonitorData const& sensor_data);
 
     public:
         ArgusMonitorDataAccessor() = default;
@@ -47,7 +47,7 @@ namespace data_api {
         bool IsOpen() const noexcept { return is_open_; }
         void Close();
 
-        void RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback);
+        void RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMonitorData const&)> callback);
     };
 
 

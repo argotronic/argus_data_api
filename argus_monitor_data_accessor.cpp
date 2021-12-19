@@ -41,7 +41,7 @@ namespace data_api {
             return false;
         }
 
-        sensor_data_ = reinterpret_cast<argus_monitor::data_api::ArgusMontorData const*>(pointer_to_mapped_data);
+        sensor_data_ = reinterpret_cast<argus_monitor::data_api::ArgusMonitorData const*>(pointer_to_mapped_data);
         is_open_     = true;
 
         StartPollingThread();
@@ -70,7 +70,7 @@ namespace data_api {
 
     void ArgusMonitorDataAccessor::StartPollingThread() { polling_thread = std::thread{ Poll, this }; }
 
-    void ArgusMonitorDataAccessor::RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMontorData const&)> callback)
+    void ArgusMonitorDataAccessor::RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMonitorData const&)> callback)
     {
         new_sensor_data_callback_ = callback;
     }
@@ -86,8 +86,8 @@ namespace data_api {
             return;
         }
 
-        argus_monitor::data_api::ArgusMontorData sensor_data_copy{};
-        auto sensor_data = reinterpret_cast<argus_monitor::data_api::ArgusMontorData const*>(class_instance->pointer_to_mapped_data);
+        argus_monitor::data_api::ArgusMonitorData sensor_data_copy{};
+        auto sensor_data = reinterpret_cast<argus_monitor::data_api::ArgusMonitorData const*>(class_instance->pointer_to_mapped_data);
 
         auto        last_cycle_counter{ sensor_data->CycleCounter };
         DWORD const polling_interval{ 100U };
@@ -97,7 +97,7 @@ namespace data_api {
                 Lock scoped_lock(mutex_handle);
                 if (last_cycle_counter != sensor_data->CycleCounter) {
                     last_cycle_counter = sensor_data->CycleCounter;
-                    memcpy(&sensor_data_copy, sensor_data, sizeof(argus_monitor::data_api::ArgusMontorData));
+                    memcpy(&sensor_data_copy, sensor_data, sizeof(argus_monitor::data_api::ArgusMonitorData));
                     new_data_available = true;
                 }
             }
@@ -114,7 +114,7 @@ namespace data_api {
         return OpenMutexW(READ_CONTROL | MUTANT_QUERY_STATE | SYNCHRONIZE, FALSE, argus_monitor::data_api::kMutexName());
     }
 
-    void ArgusMonitorDataAccessor::ProcessSensorData(argus_monitor::data_api::ArgusMontorData const& sensor_data)
+    void ArgusMonitorDataAccessor::ProcessSensorData(argus_monitor::data_api::ArgusMonitorData const& sensor_data)
     {
         new_sensor_data_callback_(sensor_data);
     }

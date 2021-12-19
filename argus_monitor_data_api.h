@@ -60,7 +60,7 @@ namespace data_api {
         std::uint32_t             SensorIndex;    // for Sensors with multiple instances (e.g. CPU, GPU) CPU/GPU index
     };
 
-    struct ArgusMontorData {
+    struct ArgusMonitorData {
         std::uint32_t Signature;       // if Argus Monitor is active :0x4D677241 -- otherwise: 0x00000000'
         std::uint8_t  ArgusMajor;      // e.g. 5
         std::uint8_t  ArgusMinorA;     // e.g. 3
