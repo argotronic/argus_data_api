@@ -6,9 +6,9 @@ The data API in version 1.0 is now in a state in which it providedes access to a
 
 Feedback and suggestions for improvements are welcome.
 
-#### License - work in process
+#### License for Argus Monitor Data API
 
 - You may use the Argus Monitor Data API in open source projects under the [Creative Commons BY-NC-SA
-license](http://creativecommons.org/licenses/by-nc-sa/4.0/) - Give Credit, NonCommercial, ShareAlike
+license](http://creativecommons.org/licenses/by-nc-sa/4.0/) - Give Credit, NonCommercial, ShareAlike.
 - You may use the Argus Monitor Data API in your private, non-public projects.
-- If you want to use the Argus Monitor Data API in commercial projects, please contact us first.
+- If you want to use the Argus Monitor Data API in commercial projects, please contact us before.
