@@ -13,13 +13,13 @@ namespace data_api {
     class ArgusMonitorDataAccessor {
 
     private:
-        HANDLE                                                               handle_file_mapping{ nullptr };
-        void*                                                                pointer_to_mapped_data{ nullptr };
+        HANDLE                                                                handle_file_mapping{ nullptr };
+        void*                                                                 pointer_to_mapped_data{ nullptr };
         argus_monitor::data_api::ArgusMonitorData const*                      sensor_data_{ nullptr };
-        bool                                                                 is_open_{ false };
-        bool                                                                 keep_polling_{ true };
+        bool                                                                  is_open_{ false };
+        bool                                                                  keep_polling_{ true };
         std::function<void(argus_monitor::data_api::ArgusMonitorData const&)> new_sensor_data_callback_{};
-        std::thread                                                          polling_thread{};
+        std::thread                                                           polling_thread{};
 
 
         void          StartPollingThread();
