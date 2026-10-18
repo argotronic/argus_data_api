@@ -6,24 +6,23 @@
 
 namespace argus_monitor::data_api
 {
-
         //    static constexpr wchar_t const* kMappingName{L"Global\\ARGUSMONITOR_DATA_INTERFACE"};
         //    static constexpr wchar_t const* kMutexName{L"Global\\ARGUSMONITOR_DATA_INTERFACE_MUTEX"};
         //    static constexpr std::size_t    kMappingSize{1024U * 1024U};
-        inline wchar_t const* kMappingName()
+        constexpr wchar_t const* kMappingName()
         {
             return L"Global\\ARGUSMONITOR_DATA_INTERFACE";
         }
-        inline wchar_t const* kMutexName()
+        constexpr wchar_t const* kMutexName()
         {
             return L"Global\\ARGUSMONITOR_DATA_INTERFACE_MUTEX";
         }
-        inline std::size_t kMappingSize()
+        constexpr std::size_t kMappingSize()
         {
             return 1024U * 1024U;
         }
 
-        enum ARGUS_MONITOR_SENSOR_TYPE {
+        enum ARGUS_MONITOR_SENSOR_TYPE : std::uint8_t {
             SENSOR_TYPE_INVALID = 0,
             SENSOR_TYPE_TEMPERATURE,              // temperatures of mainboard sensors, external fan controllers and AIOs
             SENSOR_TYPE_SYNTHETIC_TEMPERATURE,    // user defined synthetic temperatures (mean, max, average, difference, ...)
@@ -56,6 +55,8 @@ namespace argus_monitor::data_api
             SENSOR_TYPE_MAX_SENSORS
         };
 
+        const std::uint8_t kMaxSensorTypes = 32U;
+        static_assert(SENSOR_TYPE_MAX_SENSORS <= kMaxSensorTypes, "Add reserved capacity before introducing a new SENSOR_TYPE");
 
 #pragma pack(1)
         const std::uint32_t kMaxSensorCount = 512U;
@@ -86,9 +87,11 @@ namespace argus_monitor::data_api
             // e.g. to get to all FAN-Speeds:
             // the first element will be SensorData[OffsetForSensorType[SENSOR_TYPE_FAN_SPEED_RPM]]
             // and there will be SensorCount[SENSOR_TYPE_FAN_SPEED_RPM] of those elements in total
-            std::uint32_t OffsetForSensorType[SENSOR_TYPE_MAX_SENSORS];
-            std::uint32_t SensorCount[SENSOR_TYPE_MAX_SENSORS];
+            std::uint32_t OffsetForSensorType[kMaxSensorTypes];
+            std::uint32_t SensorCount[kMaxSensorTypes];
             std::uint32_t TotalSensorCount;
+
+            std::uint32_t Reserved[16];
 
             ArgusMonitorSensorData SensorData[kMaxSensorCount];
         };
