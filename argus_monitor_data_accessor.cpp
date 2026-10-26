@@ -1,122 +1,173 @@
 #include "argus_monitor_data_accessor.h"
 
+#include <cstring>
+#include <exception>
+#include <utility>
+#include <windows.h>
+
 
 namespace argus_monitor {
 namespace data_api {
 
     namespace {
-        class Lock {
+        constexpr DWORD kPollingIntervalMs{ 100U };
+        // Argus Monitor holds the mutex only for one copy of ArgusMonitorData; skip the cycle if it takes longer
+        constexpr DWORD kLockTimeoutMs{ 100U };
+
+        // owns the mutex only if the wait succeeded
+        class ScopedMutexLock {
         public:
-            explicit Lock(HANDLE mutex_handle)
+            ScopedMutexLock(HANDLE const mutex_handle, DWORD const timeout_ms) noexcept
                 : mutex_handle_{ mutex_handle }
+                , wait_result_{ WaitForSingleObject(mutex_handle, timeout_ms) }
             {
-                WaitForSingleObject(mutex_handle_, INFINITE);
             }
-            ~Lock() { ReleaseMutex(mutex_handle_); }
+            ~ScopedMutexLock()
+            {
+                if (wait_result_ == WAIT_OBJECT_0 || wait_result_ == WAIT_ABANDONED) {
+                    ReleaseMutex(mutex_handle_);
+                }
+            }
+            ScopedMutexLock(ScopedMutexLock const&)            = delete;
+            ScopedMutexLock& operator=(ScopedMutexLock const&) = delete;
+
+            [[nodiscard]] DWORD WaitResult() const noexcept { return wait_result_; }
 
         private:
-            HANDLE mutex_handle_;
+            HANDLE const mutex_handle_;
+            DWORD const  wait_result_;
         };
+
+        void CloseAndReset(void*& handle) noexcept
+        {
+            if (handle != nullptr) {
+                CloseHandle(handle);
+                handle = nullptr;
+            }
+        }
     }
+
+    namespace detail {
+        PollResult PollSnapshot(ArgusMonitorData const& shared, void* const mutex, std::uint32_t const lock_timeout_ms,
+                                std::uint32_t& last_cycle_counter, ArgusMonitorData& snapshot) noexcept
+        {
+            ScopedMutexLock const lock{ mutex, lock_timeout_ms };
+            switch (lock.WaitResult()) {
+            case WAIT_OBJECT_0:
+                break;
+            case WAIT_ABANDONED:
+                last_cycle_counter = shared.CycleCounter;
+                return PollResult::kLockAbandoned;
+            case WAIT_TIMEOUT:
+                return PollResult::kLockTimeout;
+            default:
+                return PollResult::kLockFailed;
+            }
+
+            if (shared.CycleCounter == last_cycle_counter) {
+                return PollResult::kNoChange;
+            }
+            last_cycle_counter = shared.CycleCounter;
+            std::memcpy(&snapshot, &shared, sizeof(ArgusMonitorData));
+            return IsValidSensorData(snapshot) ? PollResult::kNewData : PollResult::kInvalidData;
+        }
+    }
+
+    ArgusMonitorDataAccessor::ArgusMonitorDataAccessor(wchar_t const* const mapping_name, wchar_t const* const mutex_name)
+        : mapping_name_{ mapping_name }
+        , mutex_name_{ mutex_name }
+    {
+    }
+
+    ArgusMonitorDataAccessor::~ArgusMonitorDataAccessor() { Close(); }
 
     bool ArgusMonitorDataAccessor::Open()
     {
         if (is_open_) {
             return true;
         }
-        handle_file_mapping = OpenFileMappingW(FILE_MAP_READ | FILE_MAP_WRITE,             // read/write access
-                                              FALSE,                                       // do not inherit the name
-                                              argus_monitor::data_api::kMappingName());    // name of mapping object
 
-        if (handle_file_mapping == nullptr) {
+        // read access is all a reader needs
+        file_mapping_ = OpenFileMappingW(FILE_MAP_READ, FALSE, mapping_name_.c_str());
+        if (file_mapping_ != nullptr) {
+            // only ArgusMonitorData, not kMappingSize(): fails if the mapping is too small for this layout
+            mapped_view_ = MapViewOfFile(file_mapping_, FILE_MAP_READ, 0, 0, sizeof(ArgusMonitorData));
+        }
+        // opened here and not in the polling thread, so Open() fails while the mutex does not exist yet
+        mutex_      = OpenMutexW(READ_CONTROL | MUTANT_QUERY_STATE | SYNCHRONIZE, FALSE, mutex_name_.c_str());
+        stop_event_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        if (mapped_view_ == nullptr || mutex_ == nullptr || stop_event_ == nullptr) {
+            ReleaseHandles();
             return false;
         }
 
-        pointer_to_mapped_data = MapViewOfFile(handle_file_mapping,               // handle to map object
-                                               FILE_MAP_READ | FILE_MAP_WRITE,    // read/write permission
-                                               0, 0, argus_monitor::data_api::kMappingSize());
-
-        if (pointer_to_mapped_data == nullptr) {
-            CloseHandle(handle_file_mapping);
+        try {
+            if (!snapshot_) {
+                snapshot_ = std::make_unique<ArgusMonitorData>();
+            }
+            polling_thread_ = std::thread{ [this] { PollingLoop(); } };
+        } catch (std::exception const&) {
+            ReleaseHandles();
             return false;
         }
 
-        sensor_data_ = reinterpret_cast<argus_monitor::data_api::ArgusMonitorData const*>(pointer_to_mapped_data);
-        is_open_     = true;
-
-        StartPollingThread();
-
+        is_open_ = true;
         return true;
     }
 
     void ArgusMonitorDataAccessor::Close()
     {
-        is_open_      = false;
-        keep_polling_ = false;
-        if (polling_thread.joinable()) {
-            polling_thread.join();
+        if (stop_event_ != nullptr) {
+            SetEvent(stop_event_);
         }
-
-        sensor_data_ = nullptr;
-        if (pointer_to_mapped_data) {
-            UnmapViewOfFile(pointer_to_mapped_data);
-            pointer_to_mapped_data = nullptr;
+        if (polling_thread_.joinable()) {
+            polling_thread_.join();
         }
-        if (handle_file_mapping) {
-            CloseHandle(handle_file_mapping);
-            handle_file_mapping = nullptr;
-        }
+        ReleaseHandles();
+        is_open_ = false;
     }
 
-    void ArgusMonitorDataAccessor::StartPollingThread() { polling_thread = std::thread{ Poll, this }; }
-
-    void ArgusMonitorDataAccessor::RegisterSensorCallbackOnDataChanged(std::function<void(argus_monitor::data_api::ArgusMonitorData const&)> callback)
+    void ArgusMonitorDataAccessor::ReleaseHandles() noexcept
     {
-        new_sensor_data_callback_ = callback;
+        if (mapped_view_ != nullptr) {
+            UnmapViewOfFile(mapped_view_);
+            mapped_view_ = nullptr;
+        }
+        CloseAndReset(file_mapping_);
+        CloseAndReset(mutex_);
+        CloseAndReset(stop_event_);
     }
 
-    void ArgusMonitorDataAccessor::Poll(ArgusMonitorDataAccessor* class_instance)
+    void ArgusMonitorDataAccessor::RegisterSensorCallbackOnDataChanged(SensorDataCallback callback)
     {
-        if (nullptr == class_instance->pointer_to_mapped_data) {
-            return;
-        }
+        std::scoped_lock const lock{ callback_mutex_ };
+        new_sensor_data_callback_ = std::move(callback);
+    }
 
-        HANDLE mutex_handle = ArgusMonitorDataAccessor::OpenArgusApiMutex();
-        if (nullptr == mutex_handle) {
-            return;
-        }
-
-        argus_monitor::data_api::ArgusMonitorData sensor_data_copy{};
-        auto sensor_data = reinterpret_cast<argus_monitor::data_api::ArgusMonitorData const*>(class_instance->pointer_to_mapped_data);
-
-        auto        last_cycle_counter{ sensor_data->CycleCounter };
-        DWORD const polling_interval{ 100U };
-        while (class_instance->keep_polling_) {
-            bool new_data_available{ false };
-            {
-                Lock scoped_lock(mutex_handle);
-                if (last_cycle_counter != sensor_data->CycleCounter) {
-                    last_cycle_counter = sensor_data->CycleCounter;
-                    memcpy(&sensor_data_copy, sensor_data, sizeof(argus_monitor::data_api::ArgusMonitorData));
-                    new_data_available = true;
-                }
+    void ArgusMonitorDataAccessor::PollingLoop()
+    {
+        auto const& shared = *static_cast<ArgusMonitorData const*>(mapped_view_);
+        // 0 is never a valid CycleCounter, so the current snapshot is delivered right away
+        std::uint32_t last_cycle_counter{ 0U };
+        // polls once before looking at the stop event
+        do {
+            if (detail::PollSnapshot(shared, mutex_, kLockTimeoutMs, last_cycle_counter, *snapshot_) == detail::PollResult::kNewData) {
+                NotifySensorDataChanged(*snapshot_);
             }
+        } while (WaitForSingleObject(stop_event_, kPollingIntervalMs) == WAIT_TIMEOUT);
+    }
 
-            if (new_data_available) {
-                class_instance->ProcessSensorData(sensor_data_copy);
-            }
-            Sleep(polling_interval);
+    void ArgusMonitorDataAccessor::NotifySensorDataChanged(ArgusMonitorData const& sensor_data)
+    {
+        SensorDataCallback callback{};
+        {
+            std::scoped_lock const lock{ callback_mutex_ };
+            callback = new_sensor_data_callback_;
         }
-    }
-
-    HANDLE ArgusMonitorDataAccessor::OpenArgusApiMutex()
-    {
-        return OpenMutexW(READ_CONTROL | MUTANT_QUERY_STATE | SYNCHRONIZE, FALSE, argus_monitor::data_api::kMutexName());
-    }
-
-    void ArgusMonitorDataAccessor::ProcessSensorData(argus_monitor::data_api::ArgusMonitorData const& sensor_data)
-    {
-        new_sensor_data_callback_(sensor_data);
+        // called without the lock, so the callback may register another callback
+        if (callback) {
+            callback(sensor_data);
+        }
     }
 }
 }
